@@ -1,0 +1,7 @@
+# Fotos em 3840px guardadas para reuso (posts, impressos).
+# A página não carrega esses arquivos — não precisam ir para o servidor.
+assets/img/alta-resolucao/
+
+# Documentação interna
+LEIA-ME.md
+CREDITOS-IMAGENS.md

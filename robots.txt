@@ -1,0 +1,7 @@
+# Jogamos Shop — robots.txt
+# TROCAR o domínio abaixo pelo domínio final.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://www.jogamosshop.com.br/sitemap.xml
