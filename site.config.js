@@ -34,7 +34,7 @@ window.siteConfig = {
      Lembre de atualizar também: index.html (<link rel=canonical> e og:url),
      sitemap.xml e robots.txt.
      ---------------------------------------------------------------------- */
-  siteUrl: 'https://www.jogamosshop.com.br',
+  siteUrl: 'https://jogamos-shop.vercel.app',
 
   /* --- PROVA SOCIAL -----------------------------------------------------
      ATENÇÃO: nada aqui é inventado. Os valores estão como "—" de propósito.

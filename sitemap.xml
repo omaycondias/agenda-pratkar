@@ -2,19 +2,19 @@
 <!-- TROCAR o domínio pelo domínio final e atualizar <lastmod> a cada publicação. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://www.jogamosshop.com.br/</loc>
+    <loc>https://jogamos-shop.vercel.app/</loc>
     <lastmod>2026-08-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.jogamosshop.com.br/politica-de-privacidade.html</loc>
+    <loc>https://jogamos-shop.vercel.app/politica-de-privacidade.html</loc>
     <lastmod>2026-08-21</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://www.jogamosshop.com.br/termos-de-uso.html</loc>
+    <loc>https://jogamos-shop.vercel.app/termos-de-uso.html</loc>
     <lastmod>2026-08-21</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>

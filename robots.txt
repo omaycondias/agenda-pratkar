@@ -4,4 +4,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.jogamosshop.com.br/sitemap.xml
+Sitemap: https://jogamos-shop.vercel.app/sitemap.xml
