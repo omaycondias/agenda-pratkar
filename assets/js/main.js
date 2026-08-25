@@ -41,8 +41,11 @@
         el.textContent = '—';
         return;
       }
-      el.textContent = String(s.value) + (s.suffix || '');
-      el.setAttribute('data-final', String(s.value) + (s.suffix || ''));
+      var txt = (s.prefix || '') + String(s.value) + (s.suffix || '');
+      el.textContent = txt;
+      // Valor não numérico (uma lista de modalidades, por exemplo) não cabe
+      // no corpo de número gigante — o card passa a usar o corpo reduzido.
+      if (box) box.classList.toggle('stat--text', !/^[+\-]?[\d.,]+\D{0,3}$/.test(txt));
       if (s.label) {
         var lbl = box && box.querySelector('.stat__l');
         if (lbl) lbl.textContent = s.label;

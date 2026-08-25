@@ -547,6 +547,8 @@ section{position:relative}
 .stat{
   border:1px solid var(--line-2);border-radius:var(--r);padding:20px 18px;
   background:var(--pane);
+  display:flex;flex-direction:column;justify-content:flex-end;
+  min-height:132px;
 }
 .stat__v{
   display:block;font-family:var(--f-disp);font-weight:800;
@@ -554,6 +556,14 @@ section{position:relative}
   color:var(--glow);
 }
 .stat__l{display:block;margin-top:9px;font-size:.74rem;color:var(--mute);line-height:1.4}
+/* Card com valor em texto (lista de modalidades): corpo reduzido, para
+   caber sem estourar o card, mantendo o mesmo peso visual dos números. */
+.stat--text .stat__v{
+  font-size:clamp(1rem,3.6vw,1.22rem);
+  line-height:1.25;letter-spacing:-.01em;
+  margin-top:.15em;
+}
+
 /* estado "pendente de preenchimento" */
 .stat.is-empty{border-style:dashed;border-color:rgba(0,0,255,.5)}
 .stat.is-empty .stat__v{color:rgba(140,140,255,.4)}

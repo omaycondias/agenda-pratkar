@@ -37,16 +37,17 @@ window.siteConfig = {
   siteUrl: 'https://jogamos-shop.vercel.app',
 
   /* --- PROVA SOCIAL -----------------------------------------------------
-     ATENÇÃO: nada aqui é inventado. Os valores estão como "—" de propósito.
-     Preencha SOMENTE com números que você consiga comprovar.
-     Ex.: { value: '2.400', suffix: '+', label: 'pessoas na comunidade' }
-     Deixe `value` como null para o card aparecer marcado como pendente.
+     Números informados pela equipe da Jogamos. Edite aqui quando mudarem.
+     `prefix` e `suffix` são opcionais e ficam colados no número.
+     Um `value` que não seja numérico (uma lista, por exemplo) é renderizado
+     em corpo menor automaticamente, para caber no card.
+     Deixe `value: null` para o card voltar a aparecer marcado como pendente.
      ---------------------------------------------------------------------- */
   stats: [
-    { value: null, suffix: '',  label: 'pessoas na comunidade' },
-    { value: null, suffix: '',  label: 'ofertas compartilhadas' },
-    { value: null, suffix: '',  label: 'anos conectando gente ao esporte' },
-    { value: null, suffix: '',  label: 'modalidades atendidas' }
+    { value: '70',    prefix: '+', label: 'pessoas na comunidade' },
+    { value: '1.000', prefix: '+', label: 'ofertas enviadas por mês' },
+    { value: '2',                  label: 'anos conectando gente ao esporte' },
+    { value: 'Futebol, corrida, muay thai e outros', label: 'modalidades atendidas' }
   ],
 
   /* --- IMAGENS ----------------------------------------------------------
