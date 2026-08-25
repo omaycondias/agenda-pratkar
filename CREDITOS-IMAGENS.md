@@ -17,6 +17,8 @@ abaixo na busca do Unsplash para chegar na página do autor.
 | `produto-03` | Basquete · Cano alto | `images.unsplash.com/photo-1552346154-21d32810aba3` |
 | `produto-04` | Bolas · Campo e quadra | `images.unsplash.com/photo-1486286701208-1d58e9338013` |
 | `comunidade-01` | Bloco "A ideia" | `images.unsplash.com/photo-1540539234-c14a20fb7c7b` |
+| `msg-bola` | Mockup do celular · combo | `images.unsplash.com/photo-1486286701208-1d58e9338013` |
+| `msg-mochila` | Mockup do celular · combo | `images.unsplash.com/photo-1629952437774-170bc3e7d48b` |
 
 ---
 
@@ -38,6 +40,8 @@ A troca é simples: veja "Trocar as imagens" no `LEIA-ME.md`.
   para o grupo preencher a moldura).
 - Exportadas em **WebP**, 1000px nos produtos e 900px na comunidade — cerca de
   2× o tamanho de exibição, o que mantém a nitidez em tela Retina.
+- As duas do mockup (`msg-*`) saem em 240×148, também ~2× do slot de 118×66
+  dentro do celular. 12 KB cada.
 - Correção de tom aplicada na origem em duas fotos, para entrarem na mesma
   faixa tonal das outras: a bola (`sat=-35&bri=-10`, o verde estourava contra o
   preto) e a comunidade (`sat=-15&bri=-5`).

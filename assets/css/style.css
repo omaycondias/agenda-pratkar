@@ -695,12 +695,14 @@ section{position:relative}
 .phone.in .msg[data-msg="2"]{transition-delay:.95s}
 .phone.in .msg[data-msg="3"]{transition-delay:1.4s}
 
-.msg__ph{
-  display:grid;place-content:center;height:66px;margin-bottom:8px;
-  border-radius:8px;font-size:.6rem;color:var(--glow);letter-spacing:.1em;
-  text-transform:uppercase;
-  background:repeating-linear-gradient(135deg,rgba(0,0,255,.2) 0 8px,transparent 8px 16px),#08080f;
-  border:1px solid rgba(0,0,255,.4);
+/* As duas fotos do "combo" dentro da mensagem do mockup: bola + mochila. */
+.msg__pics{
+  display:grid;grid-template-columns:1fr 1fr;gap:3px;
+  margin-bottom:8px;border-radius:8px;overflow:hidden;
+}
+.msg__pics img{
+  width:100%;height:66px;object-fit:cover;display:block;
+  background:#08080f;
 }
 
 .phone__ping{
