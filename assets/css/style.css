@@ -135,14 +135,16 @@ section{position:relative}
 .note b{color:var(--glow)}
 
 /* ----------------------------------------------------------------- MARCA */
-.mark{width:100%;height:100%}
-.mark__a{fill:var(--blue-lift);stroke:var(--blue-lift)}
-.mark__b{fill:var(--ink)}
+/* Símbolo oficial da marca (Ativo 7 — versão branca, para fundo escuro).
+   Proporção original 96x128; a altura manda e a largura acompanha. */
+.mark{width:auto;height:100%;flex:none}
 
-.brand{display:inline-flex;align-items:center;gap:9px}
-.brand .mark{width:26px;height:26px;flex:none}
+.brand{display:inline-flex;align-items:center;gap:10px}
+.brand .mark{height:26px;width:auto}
 .brand__txt{
-  font-family:var(--f-disp);font-weight:800;font-size:.96rem;
+  /* Poppins reproduz o wordmark geométrico oficial da marca.
+     Carregada só com os caracteres de "jogamos shop" (~2 KB). */
+  font-family:"Poppins",var(--f-disp);font-weight:700;font-size:1rem;
   letter-spacing:-.02em;text-transform:lowercase;line-height:1;
 }
 .brand__txt i{font-style:normal;color:var(--glow);margin-left:.22em}
@@ -657,7 +659,7 @@ section{position:relative}
   display:flex;align-items:center;gap:9px;flex:none;
   padding:16px 8px 12px;border-bottom:1px solid var(--line-2);
 }
-.mark--tiny{width:22px;height:22px;flex:none}
+.mark--tiny{height:22px;width:auto;flex:none}
 .phone__bar span{display:flex;flex-direction:column;line-height:1.25}
 .phone__bar b{font-size:.72rem;font-weight:600}
 .phone__bar i{font-style:normal;font-size:.6rem;color:var(--wa)}
