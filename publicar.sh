@@ -1,9 +1,9 @@
 #!/bin/bash
-# Publica a landing page da Jogamos Shop no GitHub.
+# Publica a Agenda Pratkar no GitHub.
 # Uso:  bash publicar.sh
 set -u
 GH="$HOME/.local/bin/gh"
-REPO="omaycondias/dias"
+REPO="omaycondias/agenda-pratkar"
 cd "$(dirname "$0")" || exit 1
 
 echo "→ 1/4  Autenticando no GitHub"

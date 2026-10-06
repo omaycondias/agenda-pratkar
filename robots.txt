@@ -3,4 +3,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://omaycondias.github.io/dias/sitemap.xml
+Sitemap: https://omaycondias.github.io/agenda-pratkar/sitemap.xml
