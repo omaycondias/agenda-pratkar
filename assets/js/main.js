@@ -1,265 +1,332 @@
-/* =============================================================================
-   JOGAMOS SHOP — motor da página
-   Um único requestAnimationFrame + IntersectionObserver.
-   Zero dependências. Só transform/opacity (compositor).
-   ========================================================================== */
-(function () {
+(() => {
   'use strict';
 
-  var cfg = window.siteConfig || {};
-  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-  var $  = function (s, c) { return (c || document).querySelector(s); };
-  var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
-  var clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
+  document.documentElement.classList.add('js');
 
-  /* ---------------------------------------------------------- 1. CONFIG --
-     Aplica site.config.js sobre o HTML. Os links já existem no HTML para
-     que a página funcione sem JavaScript; aqui eles são sobrescritos.
-     -------------------------------------------------------------------- */
-  function applyConfig() {
-    var map = [
-      ['[data-wa]',        cfg.whatsappGroupUrl],
-      ['[data-wa-direct]', cfg.whatsappDirectUrl],
-      ['[data-ig]',        cfg.instagramUrl]
-    ];
-    map.forEach(function (pair) {
-      if (!pair[1]) return;
-      $$(pair[0]).forEach(function (el) { el.setAttribute('href', pair[1]); });
-    });
+  const header = document.querySelector('#header');
+  const menu = document.querySelector('#menu');
+  const menuButton = document.querySelector('.menu-button');
+  const todayLabel = document.querySelector('#today');
+  const yearLabel = document.querySelector('#year');
 
-    if (cfg.email) {
-      $$('[data-email]').forEach(function (el) { el.setAttribute('href', 'mailto:' + cfg.email); });
-    }
+  const formatToday = () => {
+    const value = new Intl.DateTimeFormat('pt-BR', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    }).format(new Date());
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  };
 
-    // Números de prova social. Nada é inventado: sem valor, o card fica marcado.
-    var stats = cfg.stats || [];
-    $$('[data-stat]').forEach(function (el) {
-      var s = stats[Number(el.getAttribute('data-stat'))];
-      var box = el.closest('.stat');
-      if (!s || s.value === null || s.value === undefined || s.value === '') {
-        if (box) box.classList.add('is-empty');
-        el.textContent = '—';
-        return;
-      }
-      var txt = (s.prefix || '') + String(s.value) + (s.suffix || '');
-      el.textContent = txt;
-      // Valor não numérico (uma lista de modalidades, por exemplo) não cabe
-      // no corpo de número gigante — o card passa a usar o corpo reduzido.
-      if (box) box.classList.toggle('stat--text', !/^[+\-]?[\d.,]+\D{0,3}$/.test(txt));
-      if (s.label) {
-        var lbl = box && box.querySelector('.stat__l');
-        if (lbl) lbl.textContent = s.label;
-      }
-    });
+  if (todayLabel) todayLabel.textContent = formatToday();
+  if (yearLabel) yearLabel.textContent = String(new Date().getFullYear());
 
-    // Imagens reais substituem os placeholders.
-    var imgs = cfg.images || {};
-    $$('[data-img]').forEach(function (el) {
-      var src = imgs[el.getAttribute('data-img')];
-      if (!src) return;
-      // Foto real já no HTML: basta trocar o endereço.
-      if (el.tagName === 'IMG') { el.src = src; return; }
-      // Placeholder: injeta a imagem por cima.
-      var img = new Image();
-      img.src = src;
-      img.alt = el.getAttribute('aria-label') || '';
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      el.appendChild(img);
-      el.classList.add('has-img');
-      el.removeAttribute('role');
-      el.removeAttribute('aria-label');
-    });
+  const updateMenuOffset = () => {
+    if (!header) return;
+    document.documentElement.style.setProperty('--menu-top', `${Math.max(0, header.getBoundingClientRect().bottom)}px`);
+  };
 
-    // A nota de edição some sozinha assim que todos os números forem preenchidos.
-    var pend = document.querySelectorAll('.stat.is-empty').length;
-    var note = document.querySelector('.proof .note');
-    if (note && pend === 0) note.remove();
+  const updateHeader = () => {
+    header?.classList.toggle('is-scrolled', window.scrollY > 16);
+    updateMenuOffset();
+  };
 
-    var y = $('#year');
-    if (y) y.textContent = String(new Date().getFullYear());
-  }
+  const closeMenu = () => {
+    menu?.classList.remove('is-open');
+    menuButton?.setAttribute('aria-expanded', 'false');
+    menuButton?.setAttribute('aria-label', 'Abrir menu');
+    document.body.classList.remove('menu-open');
+  };
 
-  /* ------------------------------------------------------- 2. REVELAÇÕES */
-  function initReveals() {
-    var items = $$('[data-reveal],[data-reveal-x],[data-reveal-scale]');
+  menuButton?.addEventListener('click', () => {
+    updateMenuOffset();
+    const open = !menu?.classList.contains('is-open');
+    menu?.classList.toggle('is-open', open);
+    menuButton.setAttribute('aria-expanded', String(open));
+    menuButton.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+    document.body.classList.toggle('menu-open', open);
+  });
 
-    // Stagger: data-d define a ordem; filhos de [data-reveal-scale] escalonam sozinhos.
-    items.forEach(function (el) {
-      var d = el.getAttribute('data-d');
-      if (d) el.style.setProperty('--d', d);
-      if (el.hasAttribute('data-reveal-scale')) {
-        $$(':scope > span', el).forEach(function (sp, i) { sp.style.setProperty('--d', i); });
-      }
-    });
+  menu?.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
+  window.addEventListener('scroll', updateHeader, { passive: true });
+  window.addEventListener('resize', () => {
+    updateMenuOffset();
+    if (window.innerWidth > 850) closeMenu();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeMenu();
+  });
+  updateHeader();
 
-    var phone = $('#phone');
-    var watch = phone ? items.concat([phone]) : items;
-
-    if (reduce.matches || !('IntersectionObserver' in window)) {
-      watch.forEach(function (el) { el.classList.add('in'); });
-      return;
-    }
-
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (!e.isIntersecting) return;
-        e.target.classList.add('in');
-        io.unobserve(e.target);
+  const revealItems = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const observer = new IntersectionObserver((entries, instance) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        instance.unobserve(entry.target);
       });
-    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.12 });
-
-    watch.forEach(function (el) { io.observe(el); });
-  }
-
-  /* --------------------------------------------------------- 3. SCROLL --
-     Um só loop. Lê layout de todos, depois escreve — evita layout thrashing.
-     Elementos com parallax só são calculados enquanto estão na viewport.
-     -------------------------------------------------------------------- */
-  function initScroll() {
-    var nav   = $('#nav');
-    var fab   = $('#fab');
-    var track = $('#track');
-    var fill  = $('#trackFill');
-    var finalSec = $(".final");
-    var finalBg = $('.final__bg');
-
-    var pxEls = $$('[data-px]');
-    var live  = [];   // elementos com parallax atualmente visíveis
-    var ticking = false;
-
-    if ('IntersectionObserver' in window && !reduce.matches) {
-      var pio = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          var i = live.indexOf(e.target);
-          if (e.isIntersecting && i === -1) live.push(e.target);
-          else if (!e.isIntersecting && i > -1) live.splice(i, 1);
-        });
-      }, { rootMargin: '20% 0px 20% 0px' });
-      pxEls.forEach(function (el) { pio.observe(el); });
-    }
-
-    function frame() {
-      ticking = false;
-      var vh = window.innerHeight;
-      var y  = window.scrollY || window.pageYOffset;
-
-      // ---- leituras
-      var reads = live.map(function (el) {
-        return { el: el, r: el.getBoundingClientRect(), s: parseFloat(el.getAttribute('data-px')) || 0 };
-      });
-      var trackR = track ? track.getBoundingClientRect() : null;
-      var finalR = finalSec ? finalSec.getBoundingClientRect() : null;
-
-      // ---- escritas
-      if (nav) nav.classList.toggle('is-stuck', y > 24);
-
-      if (fab) {
-        // aparece depois do hero; some quando o CTA final já está na tela
-        var finalVisible = finalR ? finalR.top < vh * 0.72 : false;
-        fab.classList.toggle('is-on', y > vh * 0.6 && !finalVisible);
-      }
-
-      if (!reduce.matches) {
-        reads.forEach(function (o) {
-          var off = ((o.r.top + o.r.height / 2) - vh / 2) / vh;
-          o.el.style.setProperty('--py', (off * o.s * 110).toFixed(1) + 'px');
-        });
-
-        if (trackR && fill) {
-          var p = clamp((vh * 0.72 - trackR.top) / Math.max(1, trackR.height * 0.72), 0, 1);
-          fill.style.setProperty('--fill', (p * 100).toFixed(1) + '%');
-        }
-
-        if (finalR && finalBg) {
-          var fp = clamp((vh - finalR.top) / (vh + finalR.height), 0, 1);
-          finalBg.style.setProperty('--zoom', (1 + fp * 0.3).toFixed(3));
-        }
-      } else if (trackR && fill) {
-        fill.style.setProperty('--fill', '100%');
-      }
-    }
-
-    function onScroll() {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(frame);
-    }
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    frame();
-  }
-
-  /* ------------------------------------------------------- 4. ACCORDION */
-  function initAccordion() {
-    $$('.acc__q').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var panel = document.getElementById(btn.getAttribute('aria-controls'));
-        var open  = btn.getAttribute('aria-expanded') === 'true';
-        btn.setAttribute('aria-expanded', String(!open));
-        if (panel) panel.setAttribute('data-open', String(!open));
-      });
-    });
-  }
-
-  /* ----------------------------------------------------- 5. MENU MOBILE */
-  function initMenu() {
-    var burger = $('#burger');
-    var menu   = $('#menu');
-    if (!burger || !menu) return;
-
-    function set(open) {
-      burger.setAttribute('aria-expanded', String(open));
-      burger.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
-      menu.classList.toggle('is-open', open);
-    }
-
-    burger.addEventListener('click', function () {
-      set(burger.getAttribute('aria-expanded') !== 'true');
-    });
-    menu.addEventListener('click', function (e) {
-      if (e.target.tagName === 'A') set(false);
-    });
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && burger.getAttribute('aria-expanded') === 'true') {
-        set(false);
-        burger.focus();
-      }
-    });
-  }
-
-  /* --------------------------------------------------- 6. MEDIR CLIQUES --
-     Envia o evento para o dataLayer (GTM) ou gtag, se existirem.
-     Sem nenhuma das duas, não faz nada e não quebra.
-     -------------------------------------------------------------------- */
-  function initTracking() {
-    $$('[data-track]').forEach(function (el) {
-      el.addEventListener('click', function () {
-        var where = el.getAttribute('data-track');
-        if (window.dataLayer) {
-          window.dataLayer.push({ event: 'clique_grupo_whatsapp', origem: where });
-        }
-        if (typeof window.gtag === 'function') {
-          window.gtag('event', 'clique_grupo_whatsapp', { origem: where });
-        }
-      });
-    });
-  }
-
-  /* ------------------------------------------------------------- START -- */
-  function start() {
-    applyConfig();
-    initReveals();
-    initScroll();
-    initAccordion();
-    initMenu();
-    initTracking();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start);
+    }, { rootMargin: '0px 0px -7% 0px', threshold: 0.06 });
+    revealItems.forEach((item) => observer.observe(item));
   } else {
-    start();
+    revealItems.forEach((item) => item.classList.add('is-visible'));
   }
+
+  /* Agenda filters and calendar */
+  const eventCards = [...document.querySelectorAll('.event-card')];
+  const monthDividers = [...document.querySelectorAll('.month-divider')];
+  const monthButtons = [...document.querySelectorAll('.month-filter')];
+  const categoryButtons = [...document.querySelectorAll('.category-filter')];
+  const viewButtons = [...document.querySelectorAll('.view-button')];
+  const searchInput = document.querySelector('#course-search');
+  const countLabel = document.querySelector('#event-count');
+  const emptyState = document.querySelector('#empty-state');
+  const agendaList = document.querySelector('#agenda-list');
+  const calendarPanel = document.querySelector('#calendar-panel');
+  const calendarGrid = document.querySelector('#calendar-grid');
+  const calendarTitle = document.querySelector('#calendar-title');
+  const calendarPrev = document.querySelector('#calendar-prev');
+  const calendarNext = document.querySelector('#calendar-next');
+
+  const state = {
+    month: 'todos',
+    category: 'todos',
+    query: '',
+    view: 'list',
+    calendarMonth: 9,
+    calendarYear: 2026
+  };
+
+  const eventData = eventCards.map((card) => ({
+    id: card.id,
+    date: card.dataset.date,
+    month: card.dataset.month,
+    category: card.dataset.category,
+    title: card.dataset.title,
+    search: card.textContent.toLocaleLowerCase('pt-BR')
+  }));
+
+  const eventMatches = (event) => {
+    const monthMatch = state.month === 'todos' || event.month === state.month;
+    const categoryMatch = state.category === 'todos' || event.category === state.category;
+    const queryMatch = !state.query || event.search.includes(state.query);
+    return monthMatch && categoryMatch && queryMatch;
+  };
+
+  const setPressed = (buttons, active) => {
+    buttons.forEach((button) => {
+      const selected = button === active;
+      button.classList.toggle('is-active', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
+  };
+
+  const applyFilters = () => {
+    let visible = 0;
+    eventCards.forEach((card, index) => {
+      const show = eventMatches(eventData[index]);
+      card.classList.toggle('is-hidden', !show);
+      if (show) visible += 1;
+    });
+
+    monthDividers.forEach((divider) => {
+      const month = divider.dataset.monthLabel;
+      const hasVisibleEvent = eventCards.some((card) => card.dataset.month === month && !card.classList.contains('is-hidden'));
+      divider.classList.toggle('is-hidden', !hasVisibleEvent);
+    });
+
+    if (countLabel) countLabel.textContent = String(visible);
+    if (emptyState) emptyState.hidden = visible !== 0;
+    renderCalendar();
+  };
+
+  monthButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      state.month = button.dataset.month;
+      if (state.month !== 'todos') state.calendarMonth = Number(state.month) - 1;
+      setPressed(monthButtons, button);
+      applyFilters();
+    });
+  });
+
+  categoryButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      state.category = button.dataset.category;
+      setPressed(categoryButtons, button);
+      applyFilters();
+    });
+  });
+
+  searchInput?.addEventListener('input', () => {
+    state.query = searchInput.value.trim().toLocaleLowerCase('pt-BR');
+    applyFilters();
+  });
+
+  const setView = (view) => {
+    state.view = view;
+    const activeButton = viewButtons.find((button) => button.dataset.view === view);
+    if (activeButton) setPressed(viewButtons, activeButton);
+    if (agendaList) agendaList.hidden = view !== 'list';
+    if (calendarPanel) calendarPanel.hidden = view !== 'calendar';
+    if (view === 'calendar') renderCalendar();
+  };
+
+  viewButtons.forEach((button) => button.addEventListener('click', () => setView(button.dataset.view)));
+
+  const monthNames = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+  function renderCalendar() {
+    if (!calendarGrid || !calendarTitle) return;
+    const year = state.calendarYear;
+    const month = state.calendarMonth;
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevious = new Date(year, month, 0).getDate();
+    const totalCells = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
+    const today = new Date();
+
+    calendarTitle.textContent = `${monthNames[month].charAt(0).toUpperCase()}${monthNames[month].slice(1)} de ${year}`;
+    calendarGrid.innerHTML = '';
+
+    for (let index = 0; index < totalCells; index += 1) {
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day';
+      let day = index - firstWeekday + 1;
+      let cellMonth = month;
+      let cellYear = year;
+
+      if (day < 1) {
+        day = daysInPrevious + day;
+        cellMonth -= 1;
+        if (cellMonth < 0) { cellMonth = 11; cellYear -= 1; }
+        cell.classList.add('is-outside');
+      } else if (day > daysInMonth) {
+        day -= daysInMonth;
+        cellMonth += 1;
+        if (cellMonth > 11) { cellMonth = 0; cellYear += 1; }
+        cell.classList.add('is-outside');
+      }
+
+      const iso = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      if (today.getFullYear() === cellYear && today.getMonth() === cellMonth && today.getDate() === day) cell.classList.add('is-today');
+      cell.innerHTML = `<span>${day}</span>`;
+
+      eventData.filter((event) => event.date === iso && eventMatches(event)).forEach((event) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'calendar-event';
+        button.textContent = event.title;
+        button.setAttribute('aria-label', `${event.title}, dia ${day}`);
+        button.addEventListener('click', () => openEventFromCalendar(event));
+        cell.appendChild(button);
+      });
+
+      calendarGrid.appendChild(cell);
+    }
+
+    if (calendarPrev) calendarPrev.disabled = month <= 9;
+    if (calendarNext) calendarNext.disabled = month >= 10;
+  }
+
+  const openEventFromCalendar = (event) => {
+    state.month = event.month;
+    state.category = 'todos';
+    state.query = '';
+    if (searchInput) searchInput.value = '';
+    const monthButton = monthButtons.find((button) => button.dataset.month === event.month);
+    const categoryButton = categoryButtons.find((button) => button.dataset.category === 'todos');
+    if (monthButton) setPressed(monthButtons, monthButton);
+    if (categoryButton) setPressed(categoryButtons, categoryButton);
+    applyFilters();
+    setView('list');
+
+    const target = document.querySelector(`#${event.id}`);
+    if (!target) return;
+    window.setTimeout(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.add('is-highlighted');
+      window.setTimeout(() => target.classList.remove('is-highlighted'), 1700);
+    }, 60);
+  };
+
+  calendarPrev?.addEventListener('click', () => {
+    if (state.calendarMonth > 9) state.calendarMonth -= 1;
+    renderCalendar();
+  });
+  calendarNext?.addEventListener('click', () => {
+    if (state.calendarMonth < 10) state.calendarMonth += 1;
+    renderCalendar();
+  });
+
+  applyFilters();
+
+  /* Caderno articles */
+  const articles = {
+    fermentacao: {
+      category: 'Técnicas · Panificação',
+      title: 'Fermentação longa: quando o tempo também vira ingrediente',
+      intro: 'Uma boa massa não depende apenas de farinha, água e fermento. Ela também precisa de tempo — e entender esse tempo muda completamente o resultado.',
+      image: 'assets/img/pratkar/curso-pizza.jpg',
+      alt: 'Massa de pizza de longa fermentação',
+      body: `<p>Na fermentação longa, a massa descansa por várias horas enquanto o fermento trabalha devagar. Esse processo desenvolve aromas mais profundos, melhora a textura e cria uma estrutura capaz de reter o ar produzido durante a fermentação.</p><p>O resultado aparece no forno: bordas mais leves, interior aerado e uma massa com personalidade. Mas tempo sozinho não resolve tudo. Temperatura, quantidade de fermento e hidratação precisam conversar entre si.</p><h3>Menos pressa, mais controle</h3><p>Fermentar por mais tempo não significa simplesmente esquecer a massa na bancada. Em geral, o frio é usado para desacelerar o processo e permitir que os sabores se desenvolvam sem que a massa passe do ponto.</p><p>Observar volume, elasticidade e aroma é mais importante do que seguir o relógio de maneira rígida. A receita oferece um caminho; a massa mostra quando está pronta.</p>`
+    },
+    croissant: {
+      category: 'Culinária francesa',
+      title: 'Camadas perfeitas: o que faz um bom croissant?',
+      intro: 'Crocante por fora, leve por dentro e cheio de camadas bem definidas. O croissant é simples nos ingredientes e exigente na execução.',
+      image: 'assets/img/pratkar/curso-croissant.jpg',
+      alt: 'Croissants e massas folhadas',
+      body: `<p>As camadas do croissant nascem da alternância entre massa e manteiga. A cada dobra, essa estrutura se multiplica. Quando vai ao forno, a água presente na manteiga vira vapor e separa delicadamente cada uma dessas folhas.</p><p>Para isso funcionar, a temperatura é decisiva. A manteiga precisa estar maleável o bastante para acompanhar a massa, mas fria o bastante para não se misturar a ela.</p><h3>Descansar também faz parte da técnica</h3><p>Entre uma dobra e outra, o glúten precisa relaxar. Tentar acelerar essa etapa deixa a massa resistente, aumenta o risco de rasgar as camadas e compromete o crescimento.</p><p>Um bom croissant é fruto de precisão, sensibilidade e paciência. É justamente essa combinação que transforma poucos ingredientes em algo extraordinário.</p>`
+    },
+    'mise-en-place': {
+      category: 'Organização · Técnica',
+      title: 'Mise en place: cozinhar melhor começa antes do fogo',
+      intro: 'Separar, medir, cortar e organizar antes de começar não é preciosismo. É uma das ferramentas mais poderosas para cozinhar com calma e precisão.',
+      image: 'assets/img/pratkar/curso-arabe.jpg',
+      alt: 'Ingredientes organizados para o preparo',
+      body: `<p>Mise en place significa colocar tudo em seu lugar. Na prática, é ler a receita inteira, separar utensílios, pesar ingredientes e antecipar os cortes antes que a panela esquente.</p><p>Essa preparação reduz interrupções, evita esquecimentos e permite prestar atenção no que realmente importa: temperatura, textura, aroma e ponto.</p><h3>Organização traz liberdade</h3><p>Quando a bancada está pronta, você deixa de correr atrás dos ingredientes e passa a conduzir o preparo. Isso é ainda mais importante em receitas rápidas, nas quais poucos segundos podem mudar o resultado.</p><p>Comece de forma simples: leia, agrupe por etapa e limpe enquanto trabalha. A cozinha ganha ritmo — e cozinhar fica muito mais prazeroso.</p>`
+    }
+  };
+
+  const articleDialog = document.querySelector('#article-dialog');
+  const dialogTitle = document.querySelector('#dialog-title');
+  const dialogCategory = document.querySelector('#dialog-category');
+  const dialogIntro = document.querySelector('#dialog-intro');
+  const dialogBody = document.querySelector('#dialog-body');
+  const dialogImage = document.querySelector('#dialog-image');
+  let articleTrigger = null;
+
+  const closeArticle = () => {
+    if (!articleDialog?.open) return;
+    articleDialog.close();
+    document.body.classList.remove('dialog-open');
+    articleTrigger?.focus();
+  };
+
+  document.querySelectorAll('[data-article]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const article = articles[button.dataset.article];
+      if (!article || !articleDialog) return;
+      articleTrigger = button;
+      dialogTitle.textContent = article.title;
+      dialogCategory.textContent = article.category;
+      dialogIntro.textContent = article.intro;
+      dialogBody.innerHTML = article.body;
+      dialogImage.src = article.image;
+      dialogImage.alt = article.alt;
+      articleDialog.showModal();
+      articleDialog.scrollTop = 0;
+      document.body.classList.add('dialog-open');
+    });
+  });
+
+  document.querySelector('.dialog-close')?.addEventListener('click', closeArticle);
+  document.querySelector('.dialog-finish')?.addEventListener('click', closeArticle);
+  articleDialog?.addEventListener('click', (event) => {
+    const rect = articleDialog.getBoundingClientRect();
+    const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    if (!inside) closeArticle();
+  });
+  articleDialog?.addEventListener('close', () => document.body.classList.remove('dialog-open'));
 })();

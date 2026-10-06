@@ -1,7 +1,6 @@
-# Jogamos Shop — robots.txt
-# TROCAR o domínio abaixo pelo domínio final.
+# Pratkar Arte Gourmet — robots.txt
 
 User-agent: *
 Allow: /
 
-Sitemap: https://jogamos-shop.vercel.app/sitemap.xml
+Sitemap: https://pratkarartegourmet.com.br/sitemap.xml
