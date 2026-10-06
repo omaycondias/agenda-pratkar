@@ -3,4 +3,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://pratkarartegourmet.com.br/sitemap.xml
+Sitemap: https://omaycondias.github.io/dias/sitemap.xml
